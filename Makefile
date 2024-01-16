@@ -2,9 +2,13 @@
 
 DOCKER_IMAGE_NAME := go-lambda-docker
 
+.PHONY: deploy
+deploy: ## deploy to aws lambda
+	sls deploy --verbose
+
 .PHONY: build
 build: ## Build docker image
-	docker image build -t $(DOCKER_IMAGE_NAME) .
+	docker image build -t $(DOCKER_IMAGE_NAME) . --platform linux/arm64
 
 .PHONY: build-no-cache
 build-no-cache: ## Build docker image

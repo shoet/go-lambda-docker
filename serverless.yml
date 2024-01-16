@@ -1,0 +1,23 @@
+service: go-lambda-docker
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  region: ap-northeast-1
+  ecr:
+    images:
+      containerExample:
+        path: ./
+        platform: linux/amd64
+
+package:
+  patterns:
+    - "!./**"
+    - ./bin/**
+
+functions:
+  LambdaContainerExample:
+    image:
+      name: containerExample
+    name: lambda-container-example
+    description: test function
