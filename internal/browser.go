@@ -39,18 +39,8 @@ func (p *PlaywrightClient) RunScrape() error {
 		Browsers:            []string{"chromium"},
 		Verbose:             true,
 	}
-	fmt.Println("set default browser path")
-	fmt.Println(runOption.DriverDirectory)
 	if err := playwright.Install(runOption); err != nil {
 		log.Fatalf("could not install playwright: %v", err)
-	}
-	ent, err := os.ReadDir(p.browserBaseDir)
-	if err != nil {
-		log.Fatalf("could not read dir: %v", err)
-	}
-	fmt.Println("### entries")
-	for _, e := range ent {
-		fmt.Println(e.Name())
 	}
 	pw, err := playwright.Run(runOption)
 	if err != nil {
@@ -62,11 +52,11 @@ func (p *PlaywrightClient) RunScrape() error {
 	if err != nil {
 		log.Fatalf("could not glob: %v", err)
 	}
-	fmt.Println("### matches")
-	fmt.Println(matches)
 
-	browserPath := matches[0]
-	browserPath = filepath.Join(browserPath, "chrome-linux", "chrome")
+	if len(matches) == 0 {
+		log.Fatalf("could not find browser")
+	}
+	browserPath := filepath.Join(matches[0], "chrome-linux", "chrome")
 
 	chromiumOptions := playwright.BrowserTypeLaunchOptions{
 		Headless:        playwright.Bool(true),
@@ -123,7 +113,6 @@ func (p *PlaywrightClient) RunScrape() error {
 	if err != nil {
 		log.Fatalf("could not create page: %v", err)
 	}
-	// if _, err = page.Goto("https://google.com"); err != nil {
 	if _, err = page.Goto("https://news.yahoo.co.jp/articles/89b9e71a181813e422f7183d3194adb0a80ddb5f"); err != nil {
 		log.Fatalf("could not goto: %v", err)
 	}
