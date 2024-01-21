@@ -15,8 +15,7 @@ func Handler(ctx context.Context) (string, error) {
 	}
 
 	fmt.Println("come handler")
-	p := internal.NewPlaywrightClient()
-	if err := p.RunScrape(); err != nil {
+	if err := internal.Run(); err != nil {
 		return "failed", fmt.Errorf("could not run scrape: %v", err)
 	}
 

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -11,25 +10,10 @@ import (
 )
 
 type PlaywrightClient struct {
+	browser playwright.Browser
 }
 
-func NewPlaywrightClient() *PlaywrightClient {
-	return &PlaywrightClient{}
-}
-
-func CopyBrowser() (string, error) {
-	src := "/var/playwright/browser/chromium-1091"
-	dst := "/tmp/playwright/browser/chromium-1091"
-
-	if _, err := os.Stat(dst); os.IsNotExist(err) {
-		if err := cp.Copy(src, dst); err != nil {
-			return "", fmt.Errorf("could not copy browser: %v", err)
-		}
-	}
-	return dst, nil
-}
-
-func (p *PlaywrightClient) RunScrape() error {
+func NewPlaywrightClient() (*PlaywrightClient, func() error, error) {
 	browserBaseDir := "/tmp/playwright/browser"
 	runOption := &playwright.RunOptions{
 		SkipInstallBrowsers: true,
@@ -38,21 +22,20 @@ func (p *PlaywrightClient) RunScrape() error {
 		Verbose:             true,
 	}
 	if err := playwright.Install(runOption); err != nil {
-		log.Fatalf("could not install playwright: %v", err)
+		return nil, nil, fmt.Errorf("could not install playwright: %v", err)
 	}
 	pw, err := playwright.Run(runOption)
 	if err != nil {
-		log.Fatalf("could not launch playwright: %v", err)
+		return nil, nil, fmt.Errorf("could not run playwright: %v", err)
 	}
-	defer pw.Stop()
 
 	matches, err := filepath.Glob(filepath.Join(browserBaseDir, "chromium-*"))
 	if err != nil {
-		log.Fatalf("could not glob: %v", err)
+		return nil, nil, fmt.Errorf("could not find browser: %v", err)
 	}
 
 	if len(matches) == 0 {
-		log.Fatalf("could not find browser")
+		return nil, nil, fmt.Errorf("could not find browser")
 	}
 	browserPath := filepath.Join(matches[0], "chrome-linux", "chrome")
 
@@ -104,20 +87,62 @@ func (p *PlaywrightClient) RunScrape() error {
 	}
 	browser, err := pw.Chromium.Launch(chromiumOptions)
 	if err != nil {
-		log.Fatalf("could not launch browser: %v", err)
+		return nil, nil, fmt.Errorf("could not launch browser: %v", err)
 	}
-	defer browser.Close()
-	page, err := browser.NewPage()
+	closer := func() error {
+		if err := browser.Close(); err != nil {
+			return fmt.Errorf("could not close browser: %v", err)
+		}
+		if err := pw.Stop(); err != nil {
+			return fmt.Errorf("could not stop playwright: %v", err)
+		}
+		return nil
+	}
+	return &PlaywrightClient{
+		browser: browser,
+	}, closer, nil
+}
+
+func CopyBrowser() (string, error) {
+	src := "/var/playwright/browser/chromium-1091"
+	dst := "/tmp/playwright/browser/chromium-1091"
+
+	if _, err := os.Stat(dst); os.IsNotExist(err) {
+		if err := cp.Copy(src, dst); err != nil {
+			return "", fmt.Errorf("could not copy browser: %v", err)
+		}
+	}
+	return dst, nil
+}
+
+func (p *PlaywrightClient) RunScrape() error {
+	page, err := p.browser.NewPage()
 	if err != nil {
-		log.Fatalf("could not create page: %v", err)
+		return fmt.Errorf("could not create page: %v", err)
 	}
 	if _, err = page.Goto("https://news.yahoo.co.jp/articles/89b9e71a181813e422f7183d3194adb0a80ddb5f"); err != nil {
-		log.Fatalf("could not goto: %v", err)
+		return fmt.Errorf("could not goto: %v", err)
 	}
 	txt, err := page.Content()
 	if err != nil {
-		log.Fatalf("could not get content: %v", err)
+		return fmt.Errorf("could not get content: %v", err)
 	}
 	fmt.Println(txt[:10])
+	return nil
+}
+
+func Run() error {
+	b, closer, err := NewPlaywrightClient()
+	if err != nil {
+		return fmt.Errorf("could not create playwright client: %v", err)
+	}
+
+	if err := b.RunScrape(); err != nil {
+		return fmt.Errorf("could not run scrape: %v", err)
+	}
+
+	if err := closer(); err != nil {
+		return fmt.Errorf("could not close playwright client: %v", err)
+	}
 	return nil
 }
