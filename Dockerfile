@@ -18,7 +18,6 @@ RUN --mount=type=cache,target=/gomod-cache \
     go build -trimpath -ldflags="-w -s" -o cmd/bin/main function/main.go
 
 # ===== deploy stage ====
-# FROM golang:1.20.12-bullseye as deploy
 FROM mcr.microsoft.com/playwright:v1.40.0-jammy as deploy
 
 RUN apt update
@@ -29,7 +28,6 @@ ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
 WORKDIR /app
 
-# ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright/browser
 RUN mkdir -p /var/playwright/browser
 ENV PLAYWRIGHT_BROWSERS_PATH=/var/playwright/browser
 RUN go run github.com/playwright-community/playwright-go/cmd/playwright@latest install --with-deps

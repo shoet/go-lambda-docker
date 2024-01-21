@@ -24,21 +24,15 @@ func CopyBrowser() (string, error) {
 	src := "/var/playwright/browser/chromium-1091"
 	dst := "/tmp/playwright/browser/chromium-1091"
 
-	// if err := os.RemoveAll("/tmp/"); err != nil {
-	// 	return "", fmt.Errorf("could not remove all: %v", err)
-	// }
-
-	_, err := os.Stat(dst)
-	if os.IsNotExist(err) {
+	if _, err := os.Stat(dst); os.IsNotExist(err) {
 		if err := cp.Copy(src, dst); err != nil {
 			return "", fmt.Errorf("could not copy browser: %v", err)
 		}
 	}
-
 	return dst, nil
 }
 
-func (p *PlaywrightClient) RunScrape(browserPath string) error {
+func (p *PlaywrightClient) RunScrape() error {
 	runOption := &playwright.RunOptions{
 		SkipInstallBrowsers: true,
 		DriverDirectory:     p.browserBaseDir,
@@ -71,7 +65,7 @@ func (p *PlaywrightClient) RunScrape(browserPath string) error {
 	fmt.Println("### matches")
 	fmt.Println(matches)
 
-	browserPath = matches[0]
+	browserPath := matches[0]
 	browserPath = filepath.Join(browserPath, "chrome-linux", "chrome")
 
 	chromiumOptions := playwright.BrowserTypeLaunchOptions{

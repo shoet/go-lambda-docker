@@ -10,15 +10,13 @@ import (
 )
 
 func Handler(ctx context.Context) (string, error) {
-	b, err := internal.CopyBrowser()
-	if err != nil {
+	if _, err := internal.CopyBrowser(); err != nil {
 		log.Fatalf("could not copy browser: %v", err)
 	}
-	browserPath = b
 
 	fmt.Println("come handler")
 	p := internal.NewPlaywrightClient()
-	if err := p.RunScrape(browserPath); err != nil {
+	if err := p.RunScrape(); err != nil {
 		return "failed", fmt.Errorf("could not run scrape: %v", err)
 	}
 
