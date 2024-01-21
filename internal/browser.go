@@ -11,13 +11,10 @@ import (
 )
 
 type PlaywrightClient struct {
-	browserBaseDir string
 }
 
 func NewPlaywrightClient() *PlaywrightClient {
-	return &PlaywrightClient{
-		browserBaseDir: "/tmp/playwright/browser",
-	}
+	return &PlaywrightClient{}
 }
 
 func CopyBrowser() (string, error) {
@@ -33,9 +30,10 @@ func CopyBrowser() (string, error) {
 }
 
 func (p *PlaywrightClient) RunScrape() error {
+	browserBaseDir := "/tmp/playwright/browser"
 	runOption := &playwright.RunOptions{
 		SkipInstallBrowsers: true,
-		DriverDirectory:     p.browserBaseDir,
+		DriverDirectory:     browserBaseDir,
 		Browsers:            []string{"chromium"},
 		Verbose:             true,
 	}
@@ -48,7 +46,7 @@ func (p *PlaywrightClient) RunScrape() error {
 	}
 	defer pw.Stop()
 
-	matches, err := filepath.Glob(filepath.Join(p.browserBaseDir, "chromium-*"))
+	matches, err := filepath.Glob(filepath.Join(browserBaseDir, "chromium-*"))
 	if err != nil {
 		log.Fatalf("could not glob: %v", err)
 	}
