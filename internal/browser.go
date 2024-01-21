@@ -9,6 +9,10 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
+type Crawler interface {
+	FetchContents(url string) (string, string, error)
+}
+
 type PlaywrightClient struct {
 	browser playwright.Browser
 }
@@ -80,20 +84,16 @@ func CopyBrowser() (string, error) {
 	return dst, nil
 }
 
-func (p *PlaywrightClient) RunScrape() error {
+func (p *PlaywrightClient) FetchPage(url string) (playwright.Page, error) {
 	page, err := p.browser.NewPage()
 	if err != nil {
-		return fmt.Errorf("could not create page: %v", err)
+		return nil, fmt.Errorf("could not create page: %v", err)
 	}
-	if _, err = page.Goto("https://news.yahoo.co.jp/articles/89b9e71a181813e422f7183d3194adb0a80ddb5f"); err != nil {
-		return fmt.Errorf("could not goto: %v", err)
-	}
-	txt, err := page.Content()
+	_, err = page.Goto(url)
 	if err != nil {
-		return fmt.Errorf("could not get content: %v", err)
+		return nil, fmt.Errorf("could not goto page: %v", err)
 	}
-	fmt.Println(txt[:10])
-	return nil
+	return page, nil
 }
 
 func Run() error {
@@ -102,9 +102,17 @@ func Run() error {
 		return fmt.Errorf("could not create playwright client: %v", err)
 	}
 
-	if err := b.RunScrape(); err != nil {
+	url := "https://google.com"
+	page, err := b.FetchPage(url)
+	if err != nil {
 		return fmt.Errorf("could not run scrape: %v", err)
 	}
+
+	txt, err := page.Content()
+	if err != nil {
+		return fmt.Errorf("could not get content: %v", err)
+	}
+	fmt.Println(txt[:10])
 
 	if err := closer(); err != nil {
 		return fmt.Errorf("could not close playwright client: %v", err)
