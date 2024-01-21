@@ -8,7 +8,11 @@ deploy: ## deploy to aws lambda
 
 .PHONY: build
 build: ## Build docker image
-	docker image build -t $(DOCKER_IMAGE_NAME) . --platform linux/arm64
+	docker image build -t $(DOCKER_IMAGE_NAME) . --platform linux/arm64 --no-cache
+
+.PHONY: build-amd64
+build-amd64: ## Build docker image
+	docker image build -t $(DOCKER_IMAGE_NAME) . --platform linux/amd64 --no-cache
 
 .PHONY: build-no-cache
 build-no-cache: ## Build docker image
